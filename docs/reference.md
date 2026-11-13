@@ -1,5 +1,7 @@
 # Pharmacokinetics reference
 
+Library version **0.1** · [Package overview](../README.md)
+
 Use one consistent system of amount, volume and time units. States in ODE
 functions are **amounts**. Closed-form functions and `nonlinear_concentration`
 return **central concentrations**, amount divided by central volume. Clearance

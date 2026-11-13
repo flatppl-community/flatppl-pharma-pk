@@ -1,5 +1,7 @@
 # flatppl-pharma-pk
 
+[Function reference](docs/reference.md)
+
 Compartment pharmacokinetics in FlatPPL. Library version **0.1**.
 
 ```flatppl
