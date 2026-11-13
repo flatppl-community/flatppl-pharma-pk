@@ -1,0 +1,15 @@
+%%%
+# Concentration observation laws
+
+Noise parameters are standard deviations, not variances or precisions.
+%%%
+flatppl_compat = "0.1"
+
+% Independent Gaussian errors with constant standard deviation.
+additive_error(concentration, sigma) = Normal.(concentration, sigma)
+
+% Independent Gaussian errors with additive and proportional variance terms.
+combined_error(concentration, sigma_add, sigma_prop) = Normal.(concentration, sqrt.(sigma_add^2 .+ (sigma_prop .* concentration).^2))
+
+% Independent lognormal errors with concentration as the conditional median.
+lognormal_error(concentration, sigma_log) = LogNormal.(log.(concentration), sigma_log)

@@ -1,0 +1,19 @@
+%%%
+# Amount-based compartment dynamics
+
+State entries are amounts. Parameters and the constant input rate are explicit.
+%%%
+flatppl_compat = "0.1"
+
+% One central compartment with linear clearance and constant input.
+one_compartment_rhs(t, y, p) = [p.input_rate - p.clearance * y[1] / p.volume]
+
+exchange(y, p) = p.intercompartmental_clearance * (y[1] / p.central_volume - y[2] / p.peripheral_volume)
+% Central and peripheral amounts with linear clearance and central input.
+two_compartment_rhs(t, y, p) = [p.input_rate - p.clearance * y[1] / p.central_volume - exchange(y, p), exchange(y, p)]
+
+% One central amount with saturable elimination and constant input.
+michaelis_menten_rhs(t, y, p) = [p.input_rate - p.vmax * y[1] / (p.km * p.volume + y[1])]
+
+% The caller chooses an ODE solver. Return central concentrations on its grid.
+nonlinear_concentration(solver, initial_amount, times, p) = rowstack(solver(michaelis_menten_rhs, [initial_amount], times, p))[:, 1] ./ p.volume

@@ -1,0 +1,25 @@
+%%%
+# Compartment pharmacokinetics
+
+Closed-form central concentrations, amount-based dynamics, and observation laws.
+%%%
+flatppl_compat = "0.1"
+compartments = load_module("src/compartments.flatppl")
+dynamics = load_module("src/dynamics.flatppl")
+observations = load_module("src/observations.flatppl")
+doses = load_module("src/doses.flatppl")
+one_compartment_bolus = compartments.one_compartment_bolus
+one_compartment_oral = compartments.one_compartment_oral
+one_compartment_infusion = compartments.one_compartment_infusion
+two_compartment_bolus = compartments.two_compartment_bolus
+two_compartment_oral = compartments.two_compartment_oral
+two_compartment_infusion = compartments.two_compartment_infusion
+one_compartment_rhs = dynamics.one_compartment_rhs
+two_compartment_rhs = dynamics.two_compartment_rhs
+michaelis_menten_rhs = dynamics.michaelis_menten_rhs
+nonlinear_concentration = dynamics.nonlinear_concentration
+additive_error = observations.additive_error
+combined_error = observations.combined_error
+lognormal_error = observations.lognormal_error
+dose_superposition = doses.dose_superposition
+infusion_superposition = doses.infusion_superposition

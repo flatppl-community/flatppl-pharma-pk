@@ -1,0 +1,22 @@
+%%%
+# Compartment value and derivative fixture
+
+Inputs are log clearance, central volume, peripheral volume, exchange clearance,
+absorption rate and bioavailability. Outputs group six times by model and route.
+%%%
+flatppl_compat = "0.1"
+pk = load_module("../main.flatppl")
+x = elementof(cartpow(reals, 6))
+p = exp.(x)
+single = record(clearance = p[1], volume = p[2], absorption = p[5], bioavailability = p[6])
+double = record(clearance = p[1], central_volume = p[2], peripheral_volume = p[3], intercompartmental_clearance = p[4], absorption = p[5], bioavailability = p[6])
+times = [-0.1, 0.0, 0.001, 1.0, 3.0, 6.0]
+inputs = x
+outputs = cat(
+    pk.one_compartment_bolus(times, 100.0, single),
+    pk.one_compartment_oral(times, 100.0, single),
+    pk.one_compartment_infusion(times, 12.0, 3.0, single),
+    pk.two_compartment_bolus(times, 100.0, double),
+    pk.two_compartment_oral(times, 100.0, double),
+    pk.two_compartment_infusion(times, 12.0, 3.0, double)
+)

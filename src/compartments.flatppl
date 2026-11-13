@@ -1,0 +1,103 @@
+%%%
+Central concentrations after one intravenous bolus, oral dose, or finite infusion.
+Use consistent amount, volume, and time units. Parameters must be positive;
+dose and rate may be zero. See docs/compartments.md for the equations and domains.
+%%%
+flatppl_compat = "0.1"
+
+# The series retains derivatives at zero. Bound inactive expressions because
+# ifelse need not short-circuit (spec §07, Logic and conditionals).
+_pk_exprel_series(x) = 1 + x * (-1/2 + x * (1/6 + x * (-1/24 + x * (1/120 + x * (-1/720 + x/5040)))))
+_pk_exprel(x) = ifelse(
+    x < 0.01,
+    _pk_exprel_series(min(x, 0.01)),
+    -expm1(-x) / ifelse(x < 0.01, 1, x)
+)
+
+# Symmetry in the small rate difference gives the correct partial derivatives
+# at a == b; using min(a,b) and abs(a-b) there would introduce a cusp in AD.
+_pk_sinhc_series(x) = 1 + x^2 * (1/6 + x^2 * (1/120 + x^2/5040))
+_pk_exp_convolution(a, b, time) = ifelse(
+    abs((a - b) * time) < 0.02,
+    time * exp(-((a + b) / 2) * time) * _pk_sinhc_series(min(max((a - b) * time / 2, -0.01), 0.01)),
+    time * exp(-min(a, b) * time) * _pk_exprel(abs((a - b) * time))
+)
+
+_pk_infusion_decay(k, time, duration) =
+    min(max(time, 0), duration) * exp(-k * max(time - duration, 0)) *
+    _pk_exprel(k * min(max(time, 0), duration))
+
+_pk_one_bolus(time, dose, clearance, volume) = ifelse(
+    time < 0, 0, dose / volume * exp(-(clearance / volume) * max(time, 0))
+)
+_pk_one_oral(time, dose, clearance, volume, absorption, bioavailability) =
+    dose * bioavailability * absorption / volume *
+    _pk_exp_convolution(clearance / volume, absorption, max(time, 0))
+_pk_one_infusion(time, rate, duration, clearance, volume) =
+    rate / volume * _pk_infusion_decay(clearance / volume, time, duration)
+
+# Broadcast numeric inputs only; a parameter record is not a broadcast operand.
+% Intravenous bolus; the dose is present at time zero.
+one_compartment_bolus(time, dose, p) = _pk_one_bolus.(time, dose, p.clearance, p.volume)
+
+% Oral dose with first-order absorption and fraction p.bioavailability.
+one_compartment_oral(time, dose, p) = _pk_one_oral.(
+    time, dose, p.clearance, p.volume, p.absorption, p.bioavailability
+)
+
+% Constant intravenous rate over [0, duration], with continuous concentration.
+one_compartment_infusion(time, rate, duration, p) = _pk_one_infusion.(time, rate, duration, p.clearance, p.volume)
+
+_pk_two_micro(k10, k12, k21) = _pk_two_gap(
+    k10, k12, k21, sqrt((k10 + k12 - k21)^2 + 4 * k12 * k21)
+)
+# At equal diagonal rates, both weights use the signed ratio; the rational
+# alternative's abs would otherwise lose the derivative at zero.
+_pk_two_gap(k10, k12, k21, gap) = record(
+    alpha = (k10 + k12 + k21 + gap) / 2,
+    beta = k10 * k21 / ((k10 + k12 + k21 + gap) / 2),
+    fast = ifelse(k10 + k12 >= k21,
+        (1 + (k10 + k12 - k21) / gap) / 2,
+        2 * k12 * k21 / (gap * (gap + abs(k10 + k12 - k21)))),
+    slow = ifelse(k10 + k12 > k21,
+        2 * k12 * k21 / (gap * (gap + abs(k10 + k12 - k21))),
+        (1 - (k10 + k12 - k21) / gap) / 2)
+)
+
+_pk_two_bolus(time, dose, volume, r) = ifelse(time < 0, 0,
+    dose / volume * (r.fast * exp(-r.alpha * max(time, 0)) + r.slow * exp(-r.beta * max(time, 0)))
+)
+_pk_two_oral(time, dose, volume, absorption, bioavailability, r) = dose * bioavailability * absorption / volume * (
+    r.fast * _pk_exp_convolution(r.alpha, absorption, max(time, 0)) +
+    r.slow * _pk_exp_convolution(r.beta, absorption, max(time, 0))
+)
+_pk_two_infusion(time, rate, duration, volume, r) = rate / volume * (
+    r.fast * _pk_infusion_decay(r.alpha, time, duration) +
+    r.slow * _pk_infusion_decay(r.beta, time, duration)
+)
+
+_pk_two_bolus_parameters(time, dose, clearance, central_volume, peripheral_volume, exchange) = _pk_two_bolus(
+    time, dose, central_volume, _pk_two_micro(clearance / central_volume, exchange / central_volume, exchange / peripheral_volume)
+)
+_pk_two_oral_parameters(time, dose, clearance, central_volume, peripheral_volume, exchange, absorption, bioavailability) = _pk_two_oral(
+    time, dose, central_volume, absorption, bioavailability,
+    _pk_two_micro(clearance / central_volume, exchange / central_volume, exchange / peripheral_volume)
+)
+_pk_two_infusion_parameters(time, rate, duration, clearance, central_volume, peripheral_volume, exchange) = _pk_two_infusion(
+    time, rate, duration, central_volume, _pk_two_micro(clearance / central_volume, exchange / central_volume, exchange / peripheral_volume)
+)
+
+% Intravenous bolus into the central compartment; concentration is dose/Vc at zero.
+two_compartment_bolus(time, dose, p) = _pk_two_bolus_parameters.(
+    time, dose, p.clearance, p.central_volume, p.peripheral_volume, p.intercompartmental_clearance
+)
+
+% Oral dose with first-order absorption into the central compartment.
+two_compartment_oral(time, dose, p) = _pk_two_oral_parameters.(
+    time, dose, p.clearance, p.central_volume, p.peripheral_volume, p.intercompartmental_clearance, p.absorption, p.bioavailability
+)
+
+% Constant intravenous rate into the central compartment over [0, duration].
+two_compartment_infusion(time, rate, duration, p) = _pk_two_infusion_parameters.(
+    time, rate, duration, p.clearance, p.central_volume, p.peripheral_volume, p.intercompartmental_clearance
+)

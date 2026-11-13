@@ -1,0 +1,19 @@
+%%%
+# Clearance and volume from an oral concentration curve
+
+Six synthetic measurements constrain clearance and distribution volume.
+The dose, absorption rate, bioavailability and measurement noise are known.
+%%%
+flatppl_compat = "0.1"
+pk = load_module("../main.flatppl")
+times_data = [0.25, 0.5, 1.0, 2.0, 4.0, 8.0]
+y_data = [1.02, 1.65, 2.47, 2.58, 1.84, 0.66]
+clearance ~ LogNormal(log(5.0), 0.35)
+volume ~ LogNormal(log(20.0), 0.35)
+parameters = record(clearance = clearance, volume = volume, absorption = 1.2, bioavailability = 0.8)
+concentrations = pk.one_compartment_oral(times_data, 100.0, parameters)
+response ~ pk.additive_error(concentrations, 0.1)
+prior = lawof(record(clearance = clearance, volume = volume))
+forward = kernelof(response, clearance = clearance, volume = volume)
+L = likelihoodof(forward, y_data)
+Pi_post = bayesupdate(L, prior)

@@ -1,0 +1,20 @@
+%%%
+# Saturable elimination after an intravenous bolus
+
+The initial amount is 20. Elimination has an unknown maximum rate and a
+known half-saturation concentration. These synthetic data illustrate the model.
+%%%
+flatppl_compat = "0.1"
+pk = load_module("../main.flatppl")
+ode = load_module("https://raw.githubusercontent.com/flatppl-community/flatppl-numerics-ode/867ff9754a933af29d757978c5b3685658ad7381/main.flatppl")
+times_data = linspace(0.0, 2.0, 41)
+y_data = [2.01, 1.74, 1.48]
+vmax ~ LogNormal(log(4.0), 0.3)
+parameters = record(vmax = vmax, km = 1.0, volume = 10.0, input_rate = 0.0)
+concentrations = pk.nonlinear_concentration(ode.vern7, 20.0, times_data, parameters)
+means = [concentrations[1], concentrations[21], concentrations[41]]
+response ~ pk.additive_error(means, 0.05)
+prior = lawof(record(vmax = vmax))
+forward = kernelof(response, vmax = vmax)
+L = likelihoodof(forward, y_data)
+Pi_post = bayesupdate(L, prior)

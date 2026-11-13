@@ -1,0 +1,12 @@
+%%%
+# Superposition for linear compartment models
+
+Each response receives elapsed time since its dose or infusion start.
+%%%
+flatppl_compat = "0.1"
+
+% Sum bolus or oral dose responses. This requires a linear model.
+dose_superposition(response, time, dose_times, doses, p) = sum(response(time .- dose_times, doses, p))
+
+% Sum finite infusion responses. This requires a linear model.
+infusion_superposition(response, time, starts, rates, durations, p) = sum(response(time .- starts, rates, durations, p))
