@@ -1,5 +1,7 @@
 # Closed-form compartment models
 
+[Function reference](reference.md)
+
 Every function returns **central concentration**, in amount/volume, after one
 dose into an initially empty system. `time` is elapsed time from the dose or
 infusion start. All functions return zero for negative time. At zero, a bolus
@@ -49,10 +51,14 @@ $$
 
 ## One-compartment bolus
 
+`one_compartment_bolus(time, dose, p)`
+
 For $k=CL/V$, central amount obeys $A'=-kA$, $A(0)=D$. Thus
 $C(t)=D e^{-kt}/V$.
 
 ## One-compartment oral
+
+`one_compartment_oral(time, dose, p)`
 
 Depot amount obeys $A_d'=-k_a A_d$, $A_d(0)=FD$, and central amount obeys
 $A'=k_a A_d-kA$, $A(0)=0$. Thus $C(t)=FDk_a E(k,k_a,t)/V$.
@@ -61,11 +67,15 @@ as independent parameters before evaluating that limit.
 
 ## One-compartment infusion
 
+`one_compartment_infusion(time, rate, duration, p)`
+
 Central input is $R$ from zero to $T$, then zero. The solution is
 $C(t)=R I(k,t,T)/V$. In particular, $C(0)=0$ and
 $C(T)=R(1-e^{-kT})/(Vk)$.
 
 ## Two-compartment bolus
+
+`two_compartment_bolus(time, dose, p)`
 
 Let $V_c$ and $V_p$ be the central and peripheral volumes and $Q$ the
 intercompartmental clearance. Define
@@ -99,6 +109,8 @@ positive rates. Strictly positive $Q$ makes $\Delta>0$.
 
 ## Two-compartment oral
 
+`two_compartment_oral(time, dose, p)`
+
 Add the depot $A_d'=-k_aA_d$, $A_d(0)=FD$, with input $k_aA_d$ to the
 central equation and initially empty central and peripheral compartments:
 
@@ -110,6 +122,8 @@ $$
 The same $E$ definition covers $k_a=\alpha$ and $k_a=\beta$.
 
 ## Two-compartment infusion
+
+`two_compartment_infusion(time, rate, duration, p)`
 
 Add input $R$ to the central equation from zero to $T$, with initially empty
 compartments:
