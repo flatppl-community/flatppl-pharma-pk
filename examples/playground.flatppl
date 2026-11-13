@@ -5,7 +5,7 @@ Six synthetic measurements constrain clearance and distribution volume.
 The dose, absorption rate, bioavailability and measurement noise are known.
 %%%
 flatppl_compat = "0.1"
-pk = load_module("../main.flatppl")
+pk = load_module("https://raw.githubusercontent.com/flatppl-community/flatppl-pharma-pk/6b26a6e9c6b71716fb66c34a97e456a49990bc6e/main.flatppl")
 times_data = [0.25, 0.5, 1.0, 2.0, 4.0, 8.0]
 y_data = [1.02, 1.65, 2.47, 2.58, 1.84, 0.66]
 clearance ~ LogNormal(log(5.0), 0.35)

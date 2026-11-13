@@ -5,7 +5,7 @@ The initial amount is 20. Elimination has an unknown maximum rate and a
 known half-saturation concentration. These synthetic data illustrate the model.
 %%%
 flatppl_compat = "0.1"
-pk = load_module("../main.flatppl")
+pk = load_module("https://raw.githubusercontent.com/flatppl-community/flatppl-pharma-pk/6b26a6e9c6b71716fb66c34a97e456a49990bc6e/main.flatppl")
 ode = load_module("https://raw.githubusercontent.com/flatppl-community/flatppl-numerics-ode/867ff9754a933af29d757978c5b3685658ad7381/main.flatppl")
 times_data = linspace(0.0, 2.0, 41)
 y_data = [2.01, 1.74, 1.48]
