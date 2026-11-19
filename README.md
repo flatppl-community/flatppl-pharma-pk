@@ -11,8 +11,6 @@ p = record(clearance = 5.0, volume = 20.0, absorption = 1.2, bioavailability = 0
 concentrations = pk.one_compartment_oral([0.5, 1.0, 2.0, 4.0], 100.0, p)
 ```
 
-ODE states represent amounts. Prediction functions return central concentrations. Parameters, observation laws, and priors remain explicit. Units must agree.
+ODE states represent amounts; predictions return central concentration $C=A_c/V_c$. A vector of times gives one concentration per time, with one scalar parameter record held fixed. Use consistent units, positive volumes, clearances, absorption rates and infusion durations, nonnegative doses and infusion rates, and bioavailability in $(0,1]$.
 
 The [oral-dose example](examples/playground.flatppl) infers clearance and volume from six synthetic measurements. The [nonlinear example](examples/nonlinear.flatppl) infers a saturable elimination rate.
-
-See the reference for definitions, domains, numerical limits, and validation commands.

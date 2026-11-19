@@ -83,6 +83,12 @@ function probes(expressions) {
 const parameters = 'record(clearance=1.2,volume=8.0,absorption=0.9,bioavailability=0.8)';
 const vector = probes([`a.one_compartment_oral([0.0,1.0,2.0],100.0,${parameters})`])[0];
 Object.values(vector.data).forEach((value, i) => near(value, oracle('oral', i, one).value, 3e-11, 'vector concentration'));
+const twoParameters = `record(${Object.entries(two).map(([key, value]) => `${key}=${value}`).join(',')})`;
+const curves = probes(['bolus', 'oral', 'infusion'].map(kind =>
+  `a.two_compartment_${kind}([0.0,1.0,2.0],${kind === 'infusion' ? '[6.0,12.0,18.0],3.0' : '[50.0,100.0,150.0]'},${twoParameters})`));
+curves.forEach((curve, route) => Object.values(curve.data).forEach((value, i) =>
+  near(value, (i + 1) / 2 * oracle(['bolus', 'oral', 'infusion'][route], i, two).value,
+    3e-11, 'two-compartment broadcast concentration')));
 const normal = (y, mean, sd) => -0.5*((y-mean)/sd)**2-Math.log(sd)-0.5*Math.log(2*Math.PI);
 const values = probes([
   `a.dose_superposition(a.one_compartment_bolus,2.0,[0.0,1.0],[10.0,20.0],${parameters})`,
