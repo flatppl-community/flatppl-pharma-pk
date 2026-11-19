@@ -2,6 +2,9 @@
 # Compartment pharmacokinetics
 
 Closed-form central concentrations, amount-based dynamics, and observation laws.
+Concentration is central amount divided by central volume. Numeric prediction
+inputs broadcast; p is one record of scalar parameters. See docs/reference.md
+for parameter domains, state ordering, and units.
 %%%
 flatppl_compat = "0.1"
 compartments = load_module("src/compartments.flatppl")

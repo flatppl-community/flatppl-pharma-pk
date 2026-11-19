@@ -64,40 +64,49 @@ _pk_two_gap(k10, k12, k21, gap) = record(
         (1 - (k10 + k12 - k21) / gap) / 2)
 )
 
-_pk_two_bolus(time, dose, volume, r) = ifelse(time < 0, 0,
-    dose / volume * (r.fast * exp(-r.alpha * max(time, 0)) + r.slow * exp(-r.beta * max(time, 0)))
+_pk_two_bolus(time, dose, volume, alpha, beta, fast, slow) = ifelse(time < 0, 0,
+    dose / volume * (fast * exp(-alpha * max(time, 0)) + slow * exp(-beta * max(time, 0)))
 )
-_pk_two_oral(time, dose, volume, absorption, bioavailability, r) = dose * bioavailability * absorption / volume * (
-    r.fast * _pk_exp_convolution(r.alpha, absorption, max(time, 0)) +
-    r.slow * _pk_exp_convolution(r.beta, absorption, max(time, 0))
+_pk_two_oral(time, dose, volume, absorption, bioavailability, alpha, beta, fast, slow) = dose * bioavailability * absorption / volume * (
+    fast * _pk_exp_convolution(alpha, absorption, max(time, 0)) +
+    slow * _pk_exp_convolution(beta, absorption, max(time, 0))
 )
-_pk_two_infusion(time, rate, duration, volume, r) = rate / volume * (
-    r.fast * _pk_infusion_decay(r.alpha, time, duration) +
-    r.slow * _pk_infusion_decay(r.beta, time, duration)
+_pk_two_infusion(time, rate, duration, volume, alpha, beta, fast, slow) = rate / volume * (
+    fast * _pk_infusion_decay(alpha, time, duration) +
+    slow * _pk_infusion_decay(beta, time, duration)
 )
 
-_pk_two_bolus_parameters(time, dose, clearance, central_volume, peripheral_volume, exchange) = _pk_two_bolus(
-    time, dose, central_volume, _pk_two_micro(clearance / central_volume, exchange / central_volume, exchange / peripheral_volume)
+_pk_two_bolus_parameters(time, dose, volume, r) = _pk_two_bolus.(
+    time, dose, volume, r.alpha, r.beta, r.fast, r.slow
 )
-_pk_two_oral_parameters(time, dose, clearance, central_volume, peripheral_volume, exchange, absorption, bioavailability) = _pk_two_oral(
-    time, dose, central_volume, absorption, bioavailability,
-    _pk_two_micro(clearance / central_volume, exchange / central_volume, exchange / peripheral_volume)
+_pk_two_oral_parameters(time, dose, volume, absorption, bioavailability, r) = _pk_two_oral.(
+    time, dose, volume, absorption, bioavailability, r.alpha, r.beta, r.fast, r.slow
 )
-_pk_two_infusion_parameters(time, rate, duration, clearance, central_volume, peripheral_volume, exchange) = _pk_two_infusion(
-    time, rate, duration, central_volume, _pk_two_micro(clearance / central_volume, exchange / central_volume, exchange / peripheral_volume)
+_pk_two_infusion_parameters(time, rate, duration, volume, r) = _pk_two_infusion.(
+    time, rate, duration, volume, r.alpha, r.beta, r.fast, r.slow
 )
 
 % Intravenous bolus into the central compartment; concentration is dose/Vc at zero.
-two_compartment_bolus(time, dose, p) = _pk_two_bolus_parameters.(
-    time, dose, p.clearance, p.central_volume, p.peripheral_volume, p.intercompartmental_clearance
+two_compartment_bolus(time, dose, p) = _pk_two_bolus_parameters(
+    time, dose, p.central_volume, _pk_two_micro(
+        p.clearance / p.central_volume, p.intercompartmental_clearance / p.central_volume,
+        p.intercompartmental_clearance / p.peripheral_volume
+    )
 )
 
 % Oral dose with first-order absorption into the central compartment.
-two_compartment_oral(time, dose, p) = _pk_two_oral_parameters.(
-    time, dose, p.clearance, p.central_volume, p.peripheral_volume, p.intercompartmental_clearance, p.absorption, p.bioavailability
+two_compartment_oral(time, dose, p) = _pk_two_oral_parameters(
+    time, dose, p.central_volume, p.absorption, p.bioavailability,
+    _pk_two_micro(
+        p.clearance / p.central_volume, p.intercompartmental_clearance / p.central_volume,
+        p.intercompartmental_clearance / p.peripheral_volume
+    )
 )
 
 % Constant intravenous rate into the central compartment over [0, duration].
-two_compartment_infusion(time, rate, duration, p) = _pk_two_infusion_parameters.(
-    time, rate, duration, p.clearance, p.central_volume, p.peripheral_volume, p.intercompartmental_clearance
+two_compartment_infusion(time, rate, duration, p) = _pk_two_infusion_parameters(
+    time, rate, duration, p.central_volume, _pk_two_micro(
+        p.clearance / p.central_volume, p.intercompartmental_clearance / p.central_volume,
+        p.intercompartmental_clearance / p.peripheral_volume
+    )
 )
