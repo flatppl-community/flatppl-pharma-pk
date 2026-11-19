@@ -35,13 +35,13 @@ in an array: records are not broadcast operands or array elements in FlatPPL.
 The definitions below use $t\geq0$, dose $D$, infusion rate $R$, duration $T$,
 absorption rate $k_a$, and bioavailability $F$. Write
 
-$$
+```math
 E(a,b,t)=\int_0^t e^{-a(t-s)}e^{-bs}\,ds
 =\begin{cases}
-\dfrac{e^{-at}-e^{-bt}}{b-a},&a\ne b,\\
-t e^{-at},&a=b,
+\dfrac{e^{-at}-e^{-bt}}{b-a},&a\ne b,
+\\ t e^{-at},&a=b,
 \end{cases}
-$$
+```
 
 and, with $u=\min(t,T)$ and $v=\max(t-T,0)$,
 
